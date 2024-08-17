@@ -1,7 +1,7 @@
-import type * as _THREE  from 'three';
+import type * as _GALACEAN  from '@galacean/engine';
 import type { PointerInput } from '../types';
 
-export function extractClientCoordFromEvent( pointers: PointerInput[], out: _THREE.Vector2 ) {
+export function extractClientCoordFromEvent( pointers: PointerInput[], out: _GALACEAN.Vector2 ) {
 
 	out.set( 0, 0 );
 

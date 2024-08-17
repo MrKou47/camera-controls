@@ -1,7 +1,67 @@
 import type * as _THREE from 'three';
+import type * as _GALACEAN from '@galacean/engine';
+import type * as _TOOLKIT from '@galacean/engine-toolkit';
+
+import { Vector3 } from "@galacean/engine";
+
+function clamp(value: number, min: number, max: number): number {
+	return Math.max(min, Math.min(max, value));
+}
+
+export class Spherical {
+  radius: number;
+  phi: number;
+  theta: number;
+
+  constructor(radius = 1.0, phi = 0.0, theta = 0.0) {
+    this.radius = radius;
+    this.phi = phi;
+    this.theta = theta;
+  }
+
+  clone(): Spherical {
+    return new Spherical(this.radius, this.phi, this.theta);
+  }
+
+  copy(spherical: Spherical): Spherical {
+    this.radius = spherical.radius;
+    this.phi = spherical.phi;
+    this.theta = spherical.theta;
+    return this;
+  }
+
+  set(radius: number, phi: number, theta: number): Spherical {
+    this.radius = radius;
+    this.phi = phi;
+    this.theta = theta;
+    return this;
+  }
+
+  setFromVector3(vec3: Vector3): Spherical {
+    this.radius = vec3.length();
+    if (this.radius === 0) {
+      this.theta = 0;
+      this.phi = 0;
+    } else {
+      this.theta = Math.atan2(vec3.x, vec3.z); // azimuthal angle
+      this.phi = Math.acos(clamp(vec3.y / this.radius, -1, 1)); // polar angle
+    }
+    return this;
+  }
+
+  setFromCartesianCoords(x: number, y: number, z: number): Spherical {
+    return this.setFromVector3(new Vector3(x, y, z));
+  }
+
+  makeSafe(): Spherical {
+    const EPS = 0.000001;
+    this.phi = Math.max(EPS, Math.min(Math.PI - EPS, this.phi));
+    return this;
+  }
+}
 
 // Is this suppose to be `Pick<typeof THREE, 'MOUSE' | 'Vector2'...>`?
-export interface THREESubset {
+export interface THREESubset { 
 	Vector2   : typeof _THREE.Vector2;
 	Vector3   : typeof _THREE.Vector3;
 	Vector4   : typeof _THREE.Vector4;
@@ -11,6 +71,19 @@ export interface THREESubset {
 	Box3      : typeof _THREE.Box3;
 	Sphere    : typeof _THREE.Sphere;
 	Raycaster : typeof _THREE.Raycaster;
+	[ key: string ]: any;
+}
+
+export interface GALACEANSubset {
+	Vector2   : typeof _GALACEAN.Vector2;
+	Vector3   : typeof _GALACEAN.Vector3;
+	Vector4   : typeof _GALACEAN.Vector4;
+	Quaternion: typeof _GALACEAN.Quaternion;
+	Matrix4   : typeof _GALACEAN.Matrix;
+	Spherical : typeof Spherical;
+	Box3      : typeof _GALACEAN.BoundingBox;
+	Sphere    : typeof _GALACEAN.BoundingSphere;
+	Raycaster : typeof _GALACEAN.Ray;
 	[ key: string ]: any;
 }
 
@@ -114,14 +187,11 @@ export interface CameraControlsEventMap {
 	controlend     : { type: 'controlend' };
 }
 
-export function isPerspectiveCamera( camera: _THREE.Camera ): camera is _THREE.PerspectiveCamera {
-
-	return ( camera as _THREE.PerspectiveCamera  ).isPerspectiveCamera;
+export function isPerspectiveCamera( camera: _GALACEAN.Camera ) {
+	return camera.isOrthographic === false;
 
 }
 
-export function isOrthographicCamera( camera: _THREE.Camera ): camera is _THREE.OrthographicCamera {
-
-	return ( camera as _THREE.OrthographicCamera  ).isOrthographicCamera;
-
+export function isOrthographicCamera( camera: _GALACEAN.Camera ) {
+	return camera.isOrthographic;
 }
