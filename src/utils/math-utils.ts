@@ -1,4 +1,5 @@
 import type * as _THREE from 'three';
+import { Vector3 } from '@galacean/engine'
 import type { Ref } from '../types';
 
 const EPSILON = 1e-5;
@@ -90,13 +91,13 @@ export function smoothDamp(
 // https://docs.unity3d.com/ScriptReference/Vector3.SmoothDamp.html
 // https://github.com/Unity-Technologies/UnityCsReference/blob/a2bdfe9b3c4cd4476f44bf52f848063bfaf7b6b9/Runtime/Export/Math/Vector3.cs#L97
 export function smoothDampVec3(
-	current: _THREE.Vector3,
-	target: _THREE.Vector3,
-	currentVelocityRef: _THREE.Vector3,
+	current: Vector3,
+	target: Vector3,
+	currentVelocityRef: Vector3,
 	smoothTime: number,
 	maxSpeed: number = Infinity,
 	deltaTime: number,
-	out: _THREE.Vector3
+	out: Vector3
 ) {
 
 	// Based on Game Programming Gems 4 Chapter 1.10

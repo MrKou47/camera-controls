@@ -108,6 +108,7 @@
   ],
   "dependencies": {
     "@galacean/engine": "^1.3.6",
+    "@galacean/engine-physics-lite": "^1.3.6",
     "@galacean/engine-toolkit": "^1.3.0"
   }
 }

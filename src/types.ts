@@ -1,63 +1,91 @@
 import type * as _THREE from 'three';
 import type * as _GALACEAN from '@galacean/engine';
+import { Quaternion, Vector3, Camera } from '@galacean/engine';
 import type * as _TOOLKIT from '@galacean/engine-toolkit';
 
-import { Vector3 } from "@galacean/engine";
+import { MathUtil as MathUtils } from "@galacean/engine-math";
 
-function clamp(value: number, min: number, max: number): number {
-	return Math.max(min, Math.min(max, value));
-}
-
+/**
+ * Ref: https://en.wikipedia.org/wiki/Spherical_coordinate_system
+ *
+ * phi (the polar angle) is measured from the positive y-axis. The positive y-axis is up.
+ * theta (the azimuthal angle) is measured from the positive z-axis.
+ */
 export class Spherical {
-  radius: number;
-  phi: number;
-  theta: number;
+	radius: number;
+	phi: number;
+	theta: number;
 
-  constructor(radius = 1.0, phi = 0.0, theta = 0.0) {
-    this.radius = radius;
-    this.phi = phi;
-    this.theta = theta;
-  }
+	constructor( radius = 1, phi = 0, theta = 0 ) {
 
-  clone(): Spherical {
-    return new Spherical(this.radius, this.phi, this.theta);
-  }
+		this.radius = radius;
+		this.phi = phi; // polar angle
+		this.theta = theta; // azimuthal angle
 
-  copy(spherical: Spherical): Spherical {
-    this.radius = spherical.radius;
-    this.phi = spherical.phi;
-    this.theta = spherical.theta;
-    return this;
-  }
+		return this;
 
-  set(radius: number, phi: number, theta: number): Spherical {
-    this.radius = radius;
-    this.phi = phi;
-    this.theta = theta;
-    return this;
-  }
+	}
 
-  setFromVector3(vec3: Vector3): Spherical {
-    this.radius = vec3.length();
-    if (this.radius === 0) {
-      this.theta = 0;
-      this.phi = 0;
-    } else {
-      this.theta = Math.atan2(vec3.x, vec3.z); // azimuthal angle
-      this.phi = Math.acos(clamp(vec3.y / this.radius, -1, 1)); // polar angle
-    }
-    return this;
-  }
+	set( radius, phi, theta ) {
 
-  setFromCartesianCoords(x: number, y: number, z: number): Spherical {
-    return this.setFromVector3(new Vector3(x, y, z));
-  }
+		this.radius = radius;
+		this.phi = phi;
+		this.theta = theta;
 
-  makeSafe(): Spherical {
-    const EPS = 0.000001;
-    this.phi = Math.max(EPS, Math.min(Math.PI - EPS, this.phi));
-    return this;
-  }
+		return this;
+
+	}
+
+	copy( other ) {
+
+		this.radius = other.radius;
+		this.phi = other.phi;
+		this.theta = other.theta;
+
+		return this;
+
+	}
+
+	// restrict phi to be between EPS and PI-EPS
+	makeSafe() {
+
+		const EPS = 0.000001;
+		this.phi = Math.max( EPS, Math.min( Math.PI - EPS, this.phi ) );
+
+		return this;
+
+	}
+
+	setFromVector3( v ) {
+
+		return this.setFromCartesianCoords( v.x, v.y, v.z );
+
+	}
+
+	setFromCartesianCoords( x, y, z ) {
+
+		this.radius = Math.sqrt( x * x + y * y + z * z );
+
+		if ( this.radius === 0 ) {
+
+			this.theta = 0;
+			this.phi = 0;
+
+		} else {
+
+			this.theta = Math.atan2( x, z );
+			this.phi = Math.acos( MathUtils.clamp( y / this.radius, - 1, 1 ) );
+
+		}
+
+		return this;
+
+	}
+
+	clone() {
+		return new Spherical().copy( this );
+	}
+
 }
 
 // Is this suppose to be `Pick<typeof THREE, 'MOUSE' | 'Vector2'...>`?
@@ -187,11 +215,54 @@ export interface CameraControlsEventMap {
 	controlend     : { type: 'controlend' };
 }
 
-export function isPerspectiveCamera( camera: _GALACEAN.Camera ) {
+export function isPerspectiveCamera( camera: Camera ) {
 	return camera.isOrthographic === false;
 
 }
 
-export function isOrthographicCamera( camera: _GALACEAN.Camera ) {
+export function isOrthographicCamera( camera: Camera ) {
 	return camera.isOrthographic;
+}
+
+
+export function setFromUnitVectors(q: Quaternion, vFrom: Vector3, vTo: Vector3 ) {
+
+	// assumes direction vectors vFrom and vTo are normalized
+
+	let r = Vector3.dot( vFrom, vTo ) + 1;
+
+	if ( r < Number.EPSILON ) {
+
+		// vFrom and vTo point in opposite directions
+
+		r = 0;
+
+		if ( Math.abs( vFrom.x ) > Math.abs( vFrom.z ) ) {
+			q.x = - vFrom.y;
+			q.y = vFrom.x;
+			q.z = 0;
+			q.w = r;
+
+		} else {
+
+			q.x = 0;
+			q.y = - vFrom.z;
+			q.z = vFrom.y;
+			q.w = r;
+
+		}
+
+	} else {
+
+		// crossVectors( vFrom, vTo ); // inlined to avoid cyclic dependency on Vector3
+
+		q.x = vFrom.y * vTo.z - vFrom.z * vTo.y;
+		q.y = vFrom.z * vTo.x - vFrom.x * vTo.z;
+		q.z = vFrom.x * vTo.y - vFrom.y * vTo.x;
+		q.w = r;
+
+	}
+
+	return q.normalize();
+
 }

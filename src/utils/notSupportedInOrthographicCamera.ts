@@ -1,12 +1,11 @@
-import * as _THREE from 'three';
-import { isOrthographicCamera } from '../types';
+import { Camera } from '@galacean/engine';
 
 export function notSupportedInOrthographicCamera(
-	camera: _THREE.OrthographicCamera | _THREE.PerspectiveCamera,
+	camera: Camera,
 	message: string
-): camera is _THREE.OrthographicCamera {
+) {
 
-	if ( isOrthographicCamera( camera ) ) {
+	if ( camera.isOrthographic ) {
 
 		console.warn( `${ message } is not supported in OrthographicCamera` );
 		return true;
